@@ -1,4 +1,7 @@
 <?php 
+session_start();
+
+
 $products = [
     1 => [
         "id"        => 1,
@@ -92,6 +95,24 @@ if(isset($_GET["id"]) && isset($products[$_GET["id"]])){
     $detail = $products[$_GET["id"]];
 }
 
+if(!isset($_SESSION["cart"])){
+    $_SESSION["cart"] = [];
+}
+
+if(isset($_POST["producto"])){
+    foreach($_POST["producto"] as $id => $valor){
+        $cantidad = (int) $_POST["cantidad"][$id];
+
+        if(isset($products[$id]) && $cantidad > 0 && $cantidad <= $products[$id]["stock"]){
+            $_SESSION["cart"][$id] = $cantidad;
+        }
+    }
+}
+
+if($_SERVER["REQUEST_METHOD"] == "GET" &&   isset($_GET["delete"])){
+    unset($_SESSION["cart"]);
+}
+
 ?>
 
 <!DOCTYPE html>
@@ -105,18 +126,17 @@ if(isset($_GET["id"]) && isset($products[$_GET["id"]])){
           href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
-
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="#">Tienda Tech</a>
+            <a class="navbar-brand" href="?">Tienda Tech</a>
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item active">
-                    <a class="nav-link" href="#">Catálogo</a>
+                    <a class="nav-link" href="?cart">Carrito🛒</a>
+                    <a class="nav-link" href="?delete">Vaciar carrito</a>
                 </li>
             </ul>
         </div>
     </nav>
-
     <div class="jumbotron jumbotron-fluid bg-primary text-white">
         <div class="container">
             <h1 class="display-4">Catálogo de productos</h1>
@@ -124,7 +144,7 @@ if(isset($_GET["id"]) && isset($products[$_GET["id"]])){
         </div>
     </div>
     <div class="container mb-5">
-        <?php if($detail != null){ ?>
+        <?php if($detail != null && !isset($_GET["cart"])){ ?>
             <div class="card border-primary mb-4 shadow-sm">
         <div class="card-header bg-primary text-white">
             Detalles del producto
@@ -137,8 +157,8 @@ if(isset($_GET["id"]) && isset($products[$_GET["id"]])){
             <p class="mb-3">Stock: <?php echo $detail["stock"]; ?> unidades</p>
             <a href="?" class="btn btn-secondary">Cerrar</a>
 
-        <?php } else { ?>
-
+        <?php } else if(!isset($_GET["cart"])) { ?>
+        <form method="post" action="">
         <div class="row">
             <?php foreach($products as $product){ ?>
                 <div class="card h-100 shadow-sm">
@@ -146,20 +166,50 @@ if(isset($_GET["id"]) && isset($products[$_GET["id"]])){
                         <div class="card-body">
                             <h5 class="card-title"><?php echo $product["nombre"] ?></h5>
                             <p class="card-text text-muted mb-1"><?php echo $product["categoria"] ?></p>
-                            <p class="h4 text-primary"><?php echo$product["precio"] ?></p>
+                            <p class="h4 text-primary"><?php echo$product["precio"] ?>€</p>
                             <span class="badge badge-success"><?php echo $product["stock"] ?></span>
                         </div>
                         <div class="card-footer bg-white">
-                            <a href="" class="btn btn-primary btn-block">Añadir</a>
+                            <input type="checkbox" name="producto[<?php echo $product["id"]; ?>]"
+                            <?php if ($product["stock"] == 0) { echo "disabled"; } ?>>
+
+                            <input type="number" name="cantidad[<?php echo $product["id"]; ?>]"
+                            min="1" max="<?php echo $product["stock"]; ?>" value="1"
+                            <?php if ($product["stock"] == 0) { echo "disabled"; } ?>>
                             <a href="?id=<?php echo $product["id"]; ?>" class="btn btn-secondary btn-block">Detalles</a> 
-                        </div>
                 </div>
+        </div>
             <?php } ?>
             <div class="col-12 col-md-6 col-lg-3 mb-4">
+            <button type="submit" class="btn btn-primary">Añadir a la cesta</button>
+        </form>
         <?php } ?>
-                
-            </div>
+        <?php if(isset($_GET["cart"])) { ?>
+            <h3>Tu cesta</h3>
+
+            <?php if (empty($_SESSION["cart"])) { ?>
+                <p>La cesta está vacía.</p>
+            <?php } else { ?>
+            <?php $total = 0; ?>
+                <ul class="list-group">
+                    <?php foreach ($_SESSION["cart"] as $id => $cantidad) { ?>
+                        <?php $subto = $products[$id]["precio"]; 
+                                $total += $subto;?>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span><?php echo $products[$id]["nombre"]; ?> x <?php echo $cantidad; ?></span>
+                            <span><?php echo $subto; ?> €</span>
+                    <?php } ?>
+                    </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <spam>Total</spam>
+                            <spam><?php echo $total?>€</spam>
+                        </li>
+                </ul>
+                <a href="?" class="btn btn-secondary">Cerrar</a>
+                    <?php } ?>
+        <?php } ?>    
         </div>
+    </div>
     </div>
 </body>
 </html>
