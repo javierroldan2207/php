@@ -1,7 +1,6 @@
 <?php 
 session_start();
 
-
 $products = [
     1 => [
         "id"        => 1,
@@ -91,6 +90,12 @@ $products = [
 
 $detail = null;
 
+if(!isset($_SESSION["products"])){
+    $_SESSION["products"] = $products;
+}
+
+$products = $_SESSION["products"];
+
 if(isset($_GET["id"]) && isset($products[$_GET["id"]])){
     $detail = $products[$_GET["id"]];
 }
@@ -109,8 +114,25 @@ if(isset($_POST["producto"])){
     }
 }
 
-if($_SERVER["REQUEST_METHOD"] == "GET" &&   isset($_GET["delete"])){
+if($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET["delete"])){
     unset($_SESSION["cart"]);
+}
+
+if(isset($_POST["shopping"])){
+    $valid = true;
+    foreach ($_SESSION["cart"] as $id => $cant) {
+        if($cant > $_SESSION["products"][$id]["stock"]){
+            $valid = "Error en la compra";
+        }
+    }
+
+    if($valid){
+        foreach ($_SESSION["cart"] as $id => $cant) {
+            $_SESSION["products"][$id]["stock"] -= $cant;
+            $_SESSION["cart"] = [];
+        }
+    }
+    
 }
 
 ?>
@@ -122,8 +144,7 @@ if($_SERVER["REQUEST_METHOD"] == "GET" &&   isset($_GET["delete"])){
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Catálogo de productos</title>
 
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.1.3/dist/css/bootstrap.min.css">
 </head>
 <body class="bg-light">
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
@@ -194,7 +215,7 @@ if($_SERVER["REQUEST_METHOD"] == "GET" &&   isset($_GET["delete"])){
                 <ul class="list-group">
                     <?php foreach ($_SESSION["cart"] as $id => $cantidad) { ?>
                         <?php $subto = $products[$id]["precio"]; 
-                                $total += $subto;?>
+                                $total += $subto * $cantidad;?>
                         <li class="list-group-item d-flex justify-content-between">
                             <span><?php echo $products[$id]["nombre"]; ?> x <?php echo $cantidad; ?></span>
                             <span><?php echo $subto; ?> €</span>
@@ -206,6 +227,9 @@ if($_SERVER["REQUEST_METHOD"] == "GET" &&   isset($_GET["delete"])){
                         </li>
                 </ul>
                 <a href="?" class="btn btn-secondary">Cerrar</a>
+                <form method="post" >
+                    <button type="submit" name="shopping" class="btn btn-primary">Comprar</button>
+                </form>
                     <?php } ?>
         <?php } ?>    
         </div>
