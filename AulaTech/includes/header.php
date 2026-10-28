@@ -1,3 +1,5 @@
+<?php session_start()?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -37,18 +39,22 @@
           </li>
 
           <!-- Opciones solo para administradores -->
+           <?php if($_SESSION["role"] == "admin"){ ?>
           <li class="nav-item">
             <a class="nav-link" href="articleForm.php">Añadir artículo</a>
           </li>
           <li class="nav-item">
             <a class="nav-link" href="users.php">Gestionar usuarios</a>
           </li>
+          <?php } ?>
         </ul>
-
-        <form action="login.ph" method="post" name="login" class="form-inline my-2 my-lg-0">
+        <?php if(!isset($_SESSION["userId"])){ ?>
+        <form action="login.php" method="post" name="login" class="form-inline my-2 my-lg-0">
           <button type="submit" class="btn btn-outline-light">Iniciar sesion</button>
         </form>
-
+        <?php }else{ ?>
+         <button type="submit" name="logout" class="btn btn-outline-light"> Cerrar Sesion</button>
+        <?php }?>
       </div>
     </div>
   </nav>
